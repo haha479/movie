@@ -31,7 +31,6 @@ def login():
 		print('haha:', data["pwd"])
 		if not admin.check_pwd(data["pwd"]):
 			flash("密码错误!")
-			print('密码错误aaaa')
 			return redirect(url_for("admin.login"))
 		# 将账户账号存入session
 		session["admin"] = data["account"]
@@ -55,7 +54,21 @@ def pwd():
 @admin.route("/tag/add/", methods=["GET", "POST"])
 @admin_login_req
 def tag_add():
-	
+	form = TagForm()
+	if form.validate_on_submit():
+		data = form.data
+		# 通过标签名字段查询数据库中的tag表获取一条查询集
+		tag = Tag.query.filter_by(name=data["name"]).count()
+		if tag == 1:
+			flash("名称已经存在", "err")
+			return redirect(url_for('admin.tag_add'))
+		tag = Tag(
+			name = data["name"]
+		)
+		db.session.add(tag)
+		db.session.commit()
+		flash("添加成功", "ok")
+		redirect(url_for('admin.tag_add'))
 	return render_template("admin/tag_add.html", form=form)
 
 @admin.route("/tag/list/")
