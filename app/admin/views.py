@@ -73,6 +73,32 @@ def tag_add():
 		redirect(url_for('admin.tag_add'))
 	return render_template("admin/tag_add.html", form=form)
 
+# 编辑标签
+@admin.route("/tag/edit/<int:id>/", methods=["GET", "POST"])
+@admin_login_req
+def tag_edit(id=None):
+	form = TagForm()
+	tag = Tag.query.get_or_404(id)
+	if form.validate_on_submit():
+		data = form.data
+		# 如果用户输入的标签名与编辑标签时拿到的标签一样则不用对数据库进行修改
+		if tag.name == data['name']:
+			flash("未作任何修改", "ok")
+		else:
+			# 查询用户输入表单中的标签名在数据库中的个数
+			tag_count = Tag.query.filter_by(name=data["name"]).count()
+			# 如果用户输入的标签名在数据库中已经存在也就是 tag_count == 1
+			if tag_count == 1:
+				flash("名称已经存在", "err")
+				return redirect(url_for('admin.tag_edit', id=id))
+			# 修改
+			tag.name = data['name']
+			db.session.add(tag)
+			db.session.commit()
+			flash("修改成功", "ok")
+		redirect(url_for('admin.tag_edit', id=id))
+	return render_template("admin/tag_edit.html", form=form, tag=tag)
+
 # 标签删除
 @admin.route("/tag/del/<int:id>/<int:page>/", methods=["GET"])
 @admin_login_req
@@ -83,9 +109,9 @@ def tag_del(id=None, page=None):
 	db.session.delete(tag)
 	db.session.commit()
 	# 查询出所有标签的总数
-	count = Tag.query.all()
+	tag_count = Tag.query.all()
 	# 向上取整, 如果总共有三个标签, 则页码数应为2
-	page_num = math.ceil(len(count)/ 2)
+	page_num = math.ceil(len(tag_count)/ 2)
 	# 如果当前的页码数大于删除之后的标签总数, 则跳转到删除之后的最大页码数
 	if page_num < page and page_num != 0:
 		page = page_num

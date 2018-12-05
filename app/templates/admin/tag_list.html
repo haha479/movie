@@ -49,7 +49,7 @@
                             <td>{{ v.name }}</td>
                             <td>{{ v.addtime }}</td>
                             <td>
-                                <a class="label label-success">编辑</a>
+                                <a href="{{ url_for('admin.tag_edit', id=v.id) }}" class="label label-success">编辑</a>
                                 &nbsp;
                                 <!-- 将当前标签id和当前页码数传到后端 -->
                                 <a href="{{ url_for('admin.tag_del', id=v.id, page=page_data.page) }}" class="label label-danger">删除</a>
