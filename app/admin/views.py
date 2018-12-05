@@ -4,6 +4,8 @@ from app.admin.forms import LoginForm, TagForm
 from app.models import Admin, Tag
 from functools import wraps
 from app import db
+import math
+
 
 # 用于检查用户是否登录的装饰器
 def admin_login_req(func):
@@ -71,6 +73,26 @@ def tag_add():
 		redirect(url_for('admin.tag_add'))
 	return render_template("admin/tag_add.html", form=form)
 
+# 标签删除
+@admin.route("/tag/del/<int:id>/<int:page>/", methods=["GET"])
+@admin_login_req
+def tag_del(id=None, page=None):
+	# 通过标签id查询出需要删除的标签字段, first_or_404: 查询到无条目时会返回一个404错误, 而不是返回None
+	tag = Tag.query.filter_by(id=id).first_or_404()
+	# 删除标签并提交
+	db.session.delete(tag)
+	db.session.commit()
+	# 查询出所有标签的总数
+	count = Tag.query.all()
+	# 向上取整, 如果总共有三个标签, 则页码数应为2
+	page_num = math.ceil(len(count)/ 2)
+	# 如果当前的页码数大于删除之后的标签总数, 则跳转到删除之后的最大页码数
+	if page_num < page and page_num != 0:
+		page = page_num
+	flash("删除成功", "ok")
+	# 重定向到tag_list页面, 并传入当前页码数
+	return redirect(url_for('admin.tag_list', page=page))
+
 # 标签列表
 @admin.route("/tag/list/<int:page>/", methods=['GET'])
 @admin_login_req
@@ -79,7 +101,7 @@ def tag_list(page=None):
 		page = 1
 	page_data = Tag.query.order_by(
 		Tag.addtime.desc()
-	).paginate(page=page, per_page=4) # per_page: 一页显示的条数
+	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
 	return render_template("admin/tag_list.html", page_data=page_data)
 
 @admin.route("/movie/add/")
