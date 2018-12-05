@@ -71,10 +71,16 @@ def tag_add():
 		redirect(url_for('admin.tag_add'))
 	return render_template("admin/tag_add.html", form=form)
 
-@admin.route("/tag/list/")
+# 标签列表
+@admin.route("/tag/list/<int:page>/", methods=['GET'])
 @admin_login_req
-def tag_list():
-	return render_template("admin/tag_list.html")
+def tag_list(page=None):
+	if page is None:
+		page = 1
+	page_data = Tag.query.order_by(
+		Tag.addtime.desc()
+	).paginate(page=page, per_page=4) # per_page: 一页显示的条数
+	return render_template("admin/tag_list.html", page_data=page_data)
 
 @admin.route("/movie/add/")
 @admin_login_req
