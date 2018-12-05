@@ -4,7 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 import os
-
+from app import db
 # app = Flask(__name__)
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Hh321123@127.0.0.1:3306/movie"
 # app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
