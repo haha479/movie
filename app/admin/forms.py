@@ -77,17 +77,35 @@ class MovieForm(FlaskForm):
         label="名称",
         validators=[
             DataRequired("请输入片名")
-        ]
-        description="片名"
+        ],
+        description="片名",
         render_kw={
             "class": "",
             "placeholder": "请输入片名"
         }
     )
     url = FileField(
+        label="文件",
+        validators=[
+            DataRequired("请上传文件")
+        ],
+        description="文件",
+    )
+    info = TextAreaField(
+        label="简介",
+        validators=[
+            DataRequired("请输入简介！")
+        ],
+        description="简介",
+        render_kw={
+            "class": "form-control",
+            "rows": 10
+        }
+    )
+    logo = FileField(
         label="封面",
         validators=[
-            DataRequired("请输入封面")
+            DataRequired("请上传封面！")
         ],
         description="封面",
     )
@@ -103,7 +121,7 @@ class MovieForm(FlaskForm):
             "class": "form-control",
         }
     )
-    tag_on = SelectField(
+    tag_id = SelectField(
         label="标签",
         validators=[
             DataRequired("请选择标签")
@@ -119,8 +137,8 @@ class MovieForm(FlaskForm):
         label="地区",
         validators=[
             DataRequired("请输入地区")
-        ]
-        description="地区"
+        ],
+        description="地区",
         render_kw={
             "class": "form-control",
             "placeholder": "请输入地区"
@@ -130,8 +148,8 @@ class MovieForm(FlaskForm):
         label="片长",
         validators=[
             DataRequired("请输入片长")
-        ]
-        description="片长"
+        ],
+        description="片长",
         render_kw={
             "class": "form-control",
             "placeholder": "请输入片长"
@@ -141,8 +159,8 @@ class MovieForm(FlaskForm):
         label="上映时间",
         validators=[
             DataRequired("请输入上映时间")
-        ]
-        description="上映时间"
+        ],
+        description="上映时间",
         render_kw={
             "class": "form-control",
             "placeholder": "请输入上映时间",
