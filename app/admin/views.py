@@ -251,7 +251,7 @@ def movie_list(page):
 	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
 	return render_template("admin/movie_list.html", page_data=page_data)
 
-
+# 添加预告
 @admin.route("/preview/add/", methods=["GET", "POST"])
 @admin_login_req
 def preview_add():
@@ -274,10 +274,65 @@ def preview_add():
 		return redirect(url_for("admin.preview_add"))
 	return render_template("admin/preview_add.html", form=form)
 
-@admin.route("/preview/list/")
+# 编辑预告
+@admin.route("/preview/edit/<int:id>/", methods=["GET", "POST"])
 @admin_login_req
-def preview_list():
-	return render_template("admin/preview_list.html")
+def preview_edit(id=None):
+	form = PreviewForm()
+	form.logo.validators = []
+	preview = Preview.query.get_or_404(id)
+	if request.method == 'GET':
+		form.title.data = preview.title
+	if form.validate_on_submit():
+		data = form.data
+		preview_count = Preview.query.filter_by(title=data['title']).count()
+		if preview_count == 1 and data['title'] != preview.title:
+			flash('预告名已经存在', 'err')
+
+		if not os.path.exists(app.config['UP_DIR']):
+			os.makedirs(app.config['UP_DIR'])
+			os.chmod(app.config['UP_DIR'], 'rw')
+		
+		if form.logo.data.filename != "":
+			file_logo = secure_filename(form.logo.data.filename)
+			preview.logo = change_filename(file_logo)
+			form.logo.data.save(app.config['UP_DIR'] + preview.logo)
+
+		preview.title = data['title']
+		# preview.logo = logo
+		db.session.add(preview)
+		db.session.commit()
+
+		flash('修改预告成功', 'ok')
+		return redirect(url_for('admin.preview_edit', id=id))
+	return render_template('admin/preview_edit.html', form=form, preview=preview)
+
+
+
+# 删除预告
+@admin.route("/preview/del/<int:id>/<int:page>/", methods=['GET', 'POST'])
+@admin_login_req
+def preview_del(id=None, page=None):
+	preview = Preview.query.filter_by(id=id).first_or_404()
+	db.session.delete(preview)
+	db.session.commit()
+	allpreview = Preview.query.all()
+	page_num = math.ceil(len(allpreview)/2)
+	if page_num < page and page_num != 0:
+		page = page_num
+	flash('删除成功', 'ok')
+	return redirect(url_for('admin.preview_list', page=page))
+
+# 预告列表
+@admin.route("/preview/list/<int:page>/", methods=["GET"])
+@admin_login_req
+def preview_list(page=None):
+	if page is None:
+		page = 1
+	page_data = Preview.query.order_by(
+		Preview.addtime.desc()
+	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
+	return render_template("admin/preview_list.html", page_data=page_data)
 
 @admin.route("/user/list/")
 @admin_login_req
