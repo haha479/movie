@@ -15,38 +15,37 @@
                 <div class="box-header with-border">
                     <h3 class="box-title">修改电影</h3>
                 </div>
-                <form role="form" method="post" action="{{ url_for('admin.movie_edit',id=movie.id) }}" enctype="multipart/form-data">
+                <form role="form" method="post" enctype="multipart/form-data">
                     <div class="box-body">
-                        {% for msg in get_flashed_messages(category_filter=["ok"]) %}
+                        {% for msg in get_flashed_messages(category_filter=['ok']) %}
                         <div class="alert alert-success alert-dismissible">
                             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <h4><i class="icon fa fa-check"></i> 操作成功</h4>
+                            <h4><i class="icon fa fa-check"></i>操作成功</h4>
                             {{ msg }}
                         </div>
                         {% endfor %}
-                        {% for msg in get_flashed_messages(category_filter=["err"]) %}
+                        {% for msg in get_flashed_messages(category_filter=['err']) %}
                         <div class="alert alert-danger alert-dismissible">
                             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <h4><i class="icon fa fa-ban"></i> 操作失败</h4>
+                            <h4><i class="icon fa fa-ban"></i>操作失败</h4>
                             {{ msg }}
                         </div>
                         {% endfor %}
                         <div class="form-group">
                             <label for="input_title">{{ form.title.label }}</label>
                             {{ form.title(value=movie.title) }}
-                            <input type="hidden" value="{{ movie.id }}" name="id">
                             {% for err in form.title.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
                         <div class="form-group">
                             <label for="input_url">{{ form.url.label }}</label>
-                            {{ form.url }}
+                            {{ form.url(value=movie.url) }}
                             {% for err in form.url.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                             <div style="margin-top:5px;">
@@ -57,8 +56,8 @@
                             <label for="input_info">{{ form.info.label }}</label>
                             {{ form.info }}
                             {% for err in form.info.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
@@ -66,19 +65,19 @@
                             <label for="input_logo">{{ form.logo.label }}</label>
                             {{ form.logo }}
                             {% for err in form.logo.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
-                            <img src="{{ url_for('static',filename='uploads/'+movie.logo) }}" style="margin-top:5px;" class="img-responsive"
+                            <img src="{{ url_for('static', filename='uploads/'+movie.logo) }}" style="margin-top:5px;" class="img-responsive"
                                  alt="">
                         </div>
                         <div class="form-group">
                             <label for="input_star">{{ form.star.label }}</label>
                             {{ form.star }}
                             {% for err in form.star.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
@@ -86,8 +85,8 @@
                             <label for="input_tag_id">{{ form.tag_id.label }}</label>
                             {{ form.tag_id }}
                             {% for err in form.tag_id.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
@@ -95,8 +94,8 @@
                             <label for="input_area">{{ form.area.label }}</label>
                             {{ form.area(value=movie.area) }}
                             {% for err in form.area.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
@@ -104,8 +103,8 @@
                             <label for="input_length">{{ form.length.label }}</label>
                             {{ form.length(value=movie.length) }}
                             {% for err in form.length.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
@@ -113,8 +112,8 @@
                             <label for="input_release_time">{{ form.release_time.label }}</label>
                             {{ form.release_time(value=movie.release_time) }}
                             {% for err in form.release_time.errors %}
-                            <div class="col-md-12">
-                                <font style="color:red">{{ err }}</font>
+                            <div>
+                                <font style="color: red">{{ err }}</font>
                             </div>
                             {% endfor %}
                         </div>
@@ -172,7 +171,7 @@
 <script>
     $(document).ready(function(){
         $("#g-3").addClass("active");
-        $("#g-3-1").addClass("active");
+        $("#g-3-2").addClass("active");
     });
 </script>
 {% endblock %}

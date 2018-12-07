@@ -110,7 +110,7 @@ def tag_edit(id=None):
 		redirect(url_for('admin.tag_edit', id=id))
 	return render_template("admin/tag_edit.html", form=form, tag=tag)
 
-# 标签删除
+# 删除标签
 @admin.route("/tag/del/<int:id>/<int:page>/", methods=["GET"])
 @admin_login_req
 def tag_del(id=None, page=None):
@@ -120,9 +120,9 @@ def tag_del(id=None, page=None):
 	db.session.delete(tag)
 	db.session.commit()
 	# 查询出所有标签的总数
-	tag_count = Tag.query.all()
+	alltag = Tag.query.all()
 	# 向上取整, 如果总共有三个标签, 则页码数应为2
-	page_num = math.ceil(len(tag_count)/ 2)
+	page_num = math.ceil(len(alltag)/ 2)
 	# 如果当前的页码数大于删除之后的标签总数, 则跳转到删除之后的最大页码数
 	if page_num < page and page_num != 0:
 		page = page_num
@@ -141,24 +141,20 @@ def tag_list(page=None):
 	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
 	return render_template("admin/tag_list.html", page_data=page_data)
 
+# 添加电影
 @admin.route("/movie/add/", methods=['GET', 'POST'])
 @admin_login_req
 def movie_add():
 	form = MovieForm()
 	if form.validate_on_submit():
 		data = form.data
-		print('hahahah', form.logo.data.filename)
 		file_url = secure_filename(form.url.data.filename)
 		file_logo = secure_filename(form.logo.data.filename)
-		print('aaaaaaaaa', form.logo.data.filename)
-
 		if not os.path.exists(app.config['UP_DIR']):
 			os.makedirs(app.config['UP_DIR'])
 			os.chmod(app.config['UP_DIR'], 'rw')
- 
 		url = change_filename(file_url)
 		logo = change_filename(file_logo)
-
 		form.url.data.save(app.config['UP_DIR'] + url)
 		form.logo.data.save(app.config['UP_DIR'] + logo)
 		movie = Movie(
@@ -176,12 +172,85 @@ def movie_add():
 		)
 		db.session.add(movie)
 		db.session.commit()
+		flash("添加电影成功", "ok")
+		return redirect(url_for('admin.movie_add'))
 	return render_template("admin/movie_add.html", form=form)
 
-@admin.route("/movie/list/")
+# 编辑电影
+@admin.route("/movie/edit/<int:id>/", methods=['GET', 'POST'])
 @admin_login_req
-def movie_list():
-	return render_template("admin/movie_list.html")
+def movie_edit(id):
+	form = MovieForm()
+	form.url.validators = []
+	form.logo.validators = []
+	movie = Movie.query.get_or_404(id)
+	if request.method == "GET":
+		form.info.data = movie.info
+		form.tag_id.data = movie.tag_id
+		form.star.data = movie.star 
+	if form.validate_on_submit():
+		data = form.data
+		movie_count = Movie.query.filter_by(title=data['title']).count()
+		if movie_count == 1 and movie.title != data['title']:
+			flash('片名已经存在', 'err')
+			return redirect(url_for('admin.movie_edit', id=id))
+
+		if not os.path.exists(app.config['UP_DIR']):
+			os.makedirs(app.config['UP_DIR'])
+			os.chmod(app.config['UP_DIR'], 'rw')
+		
+		# 将用户输入的电影文件下载到本地
+		if form.url.data.filename != "":
+			file_url = secure_filename(form.url.data.filename)
+			movie.url = change_filename(file_url)
+			form.url.data.save(app.config['UP_DIR'] + movie.url)
+
+		if form.logo.data.filename != "":
+			file_logo = secure_filename(form.logo.data.filename)
+			movie.logo = change_filename(file_logo)
+			form.logo.data.save(app.config['UP_DIR'] + movie.logo)
+
+		movie.star = data['star']
+		movie.tag_id = data['tag_id']
+		movie.info = data['info']
+		movie.area = data['area']
+		movie.title = data['title']
+		movie.length = data['length']
+		movie.release_time = data['release_time']
+		db.session.add(movie)
+		db.session.commit()
+
+		flash("修改电影成功", "ok")
+		return redirect(url_for('admin.movie_edit', id=id))
+	return render_template("admin/movie_edit.html", form=form, movie=movie)
+
+# 删除电影
+@admin.route("/movie/del/<int:id>/<int:page>/", methods=['GET', 'POST'])
+@admin_login_req
+def movie_del(id=None, page=None):
+	movie = Movie.query.filter_by(id=id).first_or_404()
+	db.session.delete(movie)
+	db.session.commit()
+	allmovie = Movie.query.all()
+	page_num = math.ceil(len(allmovie)/2)
+	if page_num < page and page_num != 0:
+		page = page_num
+	flash('删除成功', 'ok')
+	return redirect(url_for("admin.movie_list", page=page))
+
+# 电影列表
+@admin.route("/movie/list/<int:page>/", methods=['GET'])
+@admin_login_req
+def movie_list(page):
+	if page is None:
+		page = 1
+	page_data = Movie.query.join(Tag).filter(
+		Tag.id == Movie.tag_id
+	).order_by(
+		Movie.addtime.desc()
+	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
+	return render_template("admin/movie_list.html", page_data=page_data)
+
 
 @admin.route("/preview/add/")
 @admin_login_req
