@@ -1,7 +1,7 @@
 from . import admin
 from flask import render_template, redirect, url_for, flash, session, request
 from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm
-from app.models import Admin, Tag, Movie, Preview, User, Comment
+from app.models import Admin, Tag, Movie, Preview, User, Comment, Moviecol
 from functools import wraps
 from app import db, app
 import math
@@ -393,10 +393,36 @@ def comment_list(page=None):
 	).paginate(page=page, per_page=5) # per_page: 一页显示的条数
 	return render_template("admin/comment_list.html", page_data=page_data)
 
-@admin.route("/moviecol/list/")
+@admin.route("/moviecol/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
-def moviecol_list():
-	return render_template("admin/moviecol_list.html")
+def moviecol_del(id=None, page=None):
+	moviecol = Moviecol.query.filter_by(id=id).first_or_404()
+	db.session.delete(moviecol)
+	db.session.commit()
+	allmoviecol = Moviecol.query.all()
+	page_num = math.ceil(len(allmoviecol) / 5)
+	if page_num < page and page_num != 0:
+		page = page_num
+	flash('删除收藏成功', 'ok')
+	return redirect(url_for("admin.moviecol_list", page=page))
+
+@admin.route("/moviecol/list/<int:page>/", methods=['GET'])
+@admin_login_req
+def moviecol_list(page=None):
+	if page is None:
+		page = 1
+	page_data = Moviecol.query.join(
+		User
+	).join(
+		Movie
+	).filter(
+		User.id == Moviecol.user_id,
+		Movie.id == Moviecol.movie_id
+	).order_by(
+		Moviecol.addtime.desc()
+	).paginate(page=page, per_page=5)
+
+	return render_template("admin/moviecol_list.html", page_data=page_data)
 
 @admin.route("/oplog/list/")
 @admin_login_req
