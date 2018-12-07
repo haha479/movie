@@ -1,7 +1,7 @@
 from . import admin
 from flask import render_template, redirect, url_for, flash, session, request
 from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm
-from app.models import Admin, Tag, Movie, Preview
+from app.models import Admin, Tag, Movie, Preview, User
 from functools import wraps
 from app import db, app
 import math
@@ -334,15 +334,34 @@ def preview_list(page=None):
 	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
 	return render_template("admin/preview_list.html", page_data=page_data)
 
-@admin.route("/user/list/")
+@admin.route("/user/view/<int:id>/", methods=['GET'])
 @admin_login_req
-def user_list():
-	return render_template("admin/user_list.html")
+def user_view(id):
+	user = User.query.get_or_404(id)
+	return render_template("admin/user_view.html", user=user)
 
-@admin.route("/user/view/")
+@admin.route("/user/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
-def user_view():
-	return render_template("admin/user_view.html")
+def user_del(id=None, page=None):
+	user = User.query.filter_by(id=id).first_or_404()
+	db.session.delete(user)
+	db.session.commit()
+	alluser = User.query.all()
+	page_num = math.ceil(len(alluser) / 10)
+	if page_num < page and page_num != 0:
+		page = page_num
+	flash('删除会员成功', 'ok')
+	return redirect(url_for('admin.user_list', page=page))
+
+@admin.route("/user/list/<int:page>/", methods=['GET'])
+@admin_login_req
+def user_list(page=None):
+	if page is None:
+		page = 1
+	page_data = User.query.order_by(
+		User.addtime.desc()
+	).paginate(page=page, per_page=10) # per_page: 一页显示的条数
+	return render_template("admin/user_list.html", page_data=page_data)
 
 @admin.route("/comment/list/")
 @admin_login_req
