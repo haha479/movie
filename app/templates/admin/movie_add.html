@@ -131,6 +131,10 @@
 <script type="text/javascript">
     jwplayer("moviecontainer").setup({
         flashplayer: "{{ url_for('static',filename='jwplayer/jwplayer.flash.swf') }}",
+        playlist: [{
+            file: "{{ url_for('static',filename='video/htpy.mp4') }}",
+            title: "环太平洋"
+        }],
         modes: [{
             type: "html5"
         }, {
