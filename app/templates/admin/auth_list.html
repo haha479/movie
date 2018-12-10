@@ -44,7 +44,7 @@
                             <th>添加时间</th>
                             <th>操作事项</th>
                         </tr>
-                        {% for v in pagedata.items %}
+                        {% for v in page_data.items %}
                         <tr>
                             <td>{{ v.id }}</td>
                             <td>{{ v.name }}</td>
@@ -53,7 +53,7 @@
                             <td>
                                 <a href="{{ url_for('admin.auth_edit', id=v.id) }}" class="label label-success">编辑</a>
                                 &nbsp;
-                                <a href="{{ url_for('admin.auth_del', id=v.id, page=pagedata.page) }}" class="label label-danger">删除</a>
+                                <a href="{{ url_for('admin.auth_del', id=v.id, page=page_data.page) }}" class="label label-danger">删除</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -61,7 +61,7 @@
                     </table>
                 </div>
                 <div class="box-footer clearfix">
-                    {{ pg.page(pagedata, 'admin.auth_list') }}
+                    {{ pg.page(page_data, 'admin.auth_list') }}
                 </div>
             </div>
         </div>
