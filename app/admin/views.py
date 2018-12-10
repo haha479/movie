@@ -1,7 +1,7 @@
 from . import admin
 from flask import render_template, redirect, url_for, flash, session, request
-from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm
-from app.models import Admin, Tag, Movie, Preview, User, Comment, Moviecol, Oplog, Adminlog, Userlog
+from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm, AuthForm
+from app.models import Admin, Tag, Movie, Preview, User, Comment, Moviecol, Oplog, Adminlog, Userlog, Auth
 from functools import wraps
 from app import db, app
 import math
@@ -66,7 +66,7 @@ def login():
 		return redirect(request.args.get("next") or url_for("admin.index"))
 	return render_template("admin/login.html",form=form)
 
-
+# 管理员退出登录
 @admin.route("/logout/")
 @admin_login_req
 def logout():
@@ -111,7 +111,7 @@ def tag_add():
 		oplog = Oplog(
 			admin_id = session["admin_id"],
 			ip=request.remote_addr,
-            reason="添加标签%s" % data["name"]
+			reason="添加标签%s" % data["name"]
 		)
 		db.session.add(oplog)
 		db.session.commit()
@@ -342,8 +342,6 @@ def preview_edit(id=None):
 		return redirect(url_for('admin.preview_edit', id=id))
 	return render_template('admin/preview_edit.html', form=form, preview=preview)
 
-
-
 # 删除预告
 @admin.route("/preview/del/<int:id>/<int:page>/", methods=['GET', 'POST'])
 @admin_login_req
@@ -369,12 +367,14 @@ def preview_list(page=None):
 	).paginate(page=page, per_page=2) # per_page: 一页显示的条数
 	return render_template("admin/preview_list.html", page_data=page_data)
 
+# 会员查看
 @admin.route("/user/view/<int:id>/", methods=['GET'])
 @admin_login_req
 def user_view(id):
 	user = User.query.get_or_404(id)
 	return render_template("admin/user_view.html", user=user)
 
+# 会员删除
 @admin.route("/user/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
 def user_del(id=None, page=None):
@@ -388,6 +388,7 @@ def user_del(id=None, page=None):
 	flash('删除会员成功', 'ok')
 	return redirect(url_for('admin.user_list', page=page))
 
+# 会员列表
 @admin.route("/user/list/<int:page>/", methods=['GET'])
 @admin_login_req
 def user_list(page=None):
@@ -398,6 +399,7 @@ def user_list(page=None):
 	).paginate(page=page, per_page=10) # per_page: 一页显示的条数
 	return render_template("admin/user_list.html", page_data=page_data)
 
+# 评论删除
 @admin.route("/comment/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
 def comment_del(id=None, page=None):
@@ -411,6 +413,7 @@ def comment_del(id=None, page=None):
 	flash('删除评论成功', 'ok')
 	return redirect(url_for("admin.comment_list", page=page))
 
+# 评论列表
 @admin.route("/comment/list/<int:page>/", methods=['GET'])
 @admin_login_req
 def comment_list(page=None):
@@ -428,6 +431,7 @@ def comment_list(page=None):
 	).paginate(page=page, per_page=5) # per_page: 一页显示的条数
 	return render_template("admin/comment_list.html", page_data=page_data)
 
+# 电影收藏删除
 @admin.route("/moviecol/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
 def moviecol_del(id=None, page=None):
@@ -441,6 +445,7 @@ def moviecol_del(id=None, page=None):
 	flash('删除收藏成功', 'ok')
 	return redirect(url_for("admin.moviecol_list", page=page))
 
+# 电影收藏列表
 @admin.route("/moviecol/list/<int:page>/", methods=['GET'])
 @admin_login_req
 def moviecol_list(page=None):
@@ -475,6 +480,7 @@ def oplog_list(page=None):
 
 	return render_template("admin/oplog_list.html", page_data=page_data)
 
+# 管理员登录日志列表
 @admin.route("/adminloginlog/list/<int:page>/", methods=['GET'])
 @admin_login_req
 def adminloginlog_list(page=None):
@@ -489,6 +495,7 @@ def adminloginlog_list(page=None):
 	).paginate(page=page, per_page=10) # per_page: 一页显示的条数
 	return render_template("admin/adminloginlog_list.html", page_data=page_data)
 
+# 用户登录日志列表
 @admin.route("/userloginlog/list/<int:page>/", methods=['GET'])
 @admin_login_req
 def userloginlog_list(page=None):
@@ -503,31 +510,90 @@ def userloginlog_list(page=None):
 	).paginate(page=page, per_page=10) # per_page: 一页显示的条数
 	return render_template("admin/userloginlog_list.html", page_data=page_data)
 
+# 角色添加
 @admin.route("/role/add/")
 @admin_login_req
 def role_add():
 	return render_template("admin/role_add.html")
 
+# 角色列表
 @admin.route("/role/list/")
 @admin_login_req
 def role_list():
 	return render_template("admin/role_list.html")
 
-@admin.route("/auth/add/")
+# 权限添加
+@admin.route("/auth/add/", methods=['GET', 'POST'])
 @admin_login_req
 def auth_add():
-	return render_template("admin/auth_add.html")
+	form = AuthForm()
+	print('lllllllllllll')
+	if form.validate_on_submit():
+		data = form.data
+		print('aaaa')
+		print('ssss', data['name'])
+		auth = Auth(
+			name=data['name'],
+			url=data['url']
+		)
+		db.session.add(auth)
+		db.session.commit()
+		flash('添加权限成功', 'ok')
+	return render_template("admin/auth_add.html", form=form)
 
-@admin.route("/auth/list/")
+# 权限编辑
+@admin.route('/auth/edit/<int:id>/', methods=['GET', 'POST'])
 @admin_login_req
-def auth_list():
-	return render_template("admin/auth_list.html")
+def auth_edit(id):
+	form = AuthForm()
+	auth = Auth.query.get_or_404(id)
+	if form.validate_on_submit():
+		data = form.data
+		# 如果用户输入的权限名与编辑权限时拿到的权限一样则不用对数据库进行修改
+		if auth.name == data['name'] and auth.url == data['url']:
+			flash("未作任何修改", "ok")
+		else:
+			# 修改 
+			auth.name = data['name']
+			auth.url = data['url']
+			db.session.add(auth)
+			db.session.commit()
+			flash("修改成功", "ok")
+		redirect(url_for('admin.auth_edit', id=id))
+	return render_template("admin/auth_edit.html", form=form, auth=auth)
 
+# 权限删除
+@admin.route("/auth/del/<int:id>/<int:page>/", methods=['GET'])
+@admin_login_req
+def auth_del(id=None, page=None):
+	auth = Auth.query.get_or_404(id)
+	db.session.delete(auth)
+	db.session.commit()
+	alluser = User.query.all()
+	page_num = math.ceil(len(alluser) / 10)
+	if page_num < page and page_num != 0:
+		page = page_num
+	flash('删除权限成功', 'ok')
+	return redirect(url_for("admin.auth_list", page=page))
+
+# 权限列表
+@admin.route("/auth/list/<int:page>/",methods=["get"])
+@admin_login_req
+def auth_list(page=None):
+	if page is None:
+		page = 1
+	pagedata = Auth.query.order_by(
+		Auth.addtime.desc()
+	).paginate(page=page, per_page=10) # per_page: 一页显示的条数
+	return render_template("admin/auth_list.html", pagedata=pagedata)
+
+# 管理员添加
 @admin.route("/admin/add/")
 @admin_login_req
 def admin_add():
 	return render_template("admin/admin_add.html")
 
+# 管理员列表
 @admin.route("/admin/list/")
 @admin_login_req
 def admin_list():
