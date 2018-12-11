@@ -1,6 +1,6 @@
 from . import admin
-from flask import render_template, redirect, url_for, flash, session, request
-from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm, AuthForm, RoleForm
+from flask import render_template, redirect, url_for, flash, session, request, abort
+from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm, PwdForm, AuthForm, RoleForm, AdminForm
 from app.models import Admin, Tag, Movie, Preview, User, Comment, Moviecol, Oplog, Adminlog, Userlog, Auth, Role
 from functools import wraps
 from app import db, app
@@ -29,7 +29,34 @@ def admin_login_req(func):
 		return func(*args, **kwargs)
 	return decorated_function
 
+# 权限控制装饰器
+def admin_auth(f):
+	@wraps(f)
+	def decorated_function(*args, **kwargs):
+		# 首先查出当前登录的管理员用户
+		admin = Admin.query.join(
+			Role
+		).filter(
+			Admin.role_id == Role.id,
+			Admin.id == session['admin_id']
+		).first()
+		# 得到当前管理员用户所支持的所有权限
+		auths = admin.role.auths
+		# 将当前管理员用户所支持的所有权限转换为一个list, 该list中的数据为int类型
+		auths = list(map(lambda x : int(x), auths.split(',')))
+		auth_list = Auth.query.all()
+		# 通过所支持的权限得到对应所支持的url
+		urls = [ auth.url for auth_id in auths for auth in auth_list if auth_id == auth.id ]
+		print('urls:',urls)
+		# 当前访问的页面url
+		rule = request.url_rule
+		print('rule:',rule)
+		if str(rule) not in urls:
+			abort(404)
+		return f(*args, **kwargs)
+	return decorated_function
 
+# 用于修改表单提交中的文件名
 def change_filename(filename):
 	fileinfo = os.path.splitext(filename)
 	filename = datetime.datetime.now().strftime("%Y%m%d%H%M%S")+str(uuid.uuid4().hex)+fileinfo[-1]
@@ -93,6 +120,7 @@ def pwd():
 # 添加标签
 @admin.route("/tag/add/", methods=["GET", "POST"])
 @admin_login_req
+@admin_auth
 def tag_add():
 	form = TagForm()
 	if form.validate_on_submit():
@@ -122,6 +150,7 @@ def tag_add():
 # 编辑标签
 @admin.route("/tag/edit/<int:id>/", methods=["GET", "POST"])
 @admin_login_req
+@admin_auth
 def tag_edit(id=None):
 	form = TagForm()
 	tag = Tag.query.get_or_404(id)
@@ -148,6 +177,7 @@ def tag_edit(id=None):
 # 删除标签
 @admin.route("/tag/del/<int:id>/<int:page>/", methods=["GET"])
 @admin_login_req
+@admin_auth
 def tag_del(id=None, page=None):
 	# 通过标签id查询出需要删除的标签字段, first_or_404: 查询到无条目时会返回一个404错误, 而不是返回None
 	tag = Tag.query.filter_by(id=id).first_or_404()
@@ -168,6 +198,7 @@ def tag_del(id=None, page=None):
 # 标签列表
 @admin.route("/tag/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def tag_list(page=None):
 	if page is None:
 		page = 1
@@ -179,6 +210,7 @@ def tag_list(page=None):
 # 添加电影
 @admin.route("/movie/add/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def movie_add():
 	form = MovieForm()
 	if form.validate_on_submit():
@@ -214,6 +246,7 @@ def movie_add():
 # 编辑电影
 @admin.route("/movie/edit/<int:id>/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def movie_edit(id):
 	form = MovieForm()
 	form.url.validators = []
@@ -262,6 +295,7 @@ def movie_edit(id):
 # 删除电影
 @admin.route("/movie/del/<int:id>/<int:page>/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def movie_del(id=None, page=None):
 	movie = Movie.query.filter_by(id=id).first_or_404()
 	db.session.delete(movie)
@@ -276,6 +310,7 @@ def movie_del(id=None, page=None):
 # 电影列表
 @admin.route("/movie/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def movie_list(page):
 	if page is None:
 		page = 1
@@ -289,6 +324,7 @@ def movie_list(page):
 # 添加预告
 @admin.route("/preview/add/", methods=["GET", "POST"])
 @admin_login_req
+@admin_auth
 def preview_add():
 	form = PreviewForm()
 	if form.validate_on_submit():
@@ -312,6 +348,7 @@ def preview_add():
 # 编辑预告
 @admin.route("/preview/edit/<int:id>/", methods=["GET", "POST"])
 @admin_login_req
+@admin_auth
 def preview_edit(id=None):
 	form = PreviewForm()
 	form.logo.validators = []
@@ -345,6 +382,7 @@ def preview_edit(id=None):
 # 删除预告
 @admin.route("/preview/del/<int:id>/<int:page>/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def preview_del(id=None, page=None):
 	preview = Preview.query.filter_by(id=id).first_or_404()
 	db.session.delete(preview)
@@ -359,6 +397,7 @@ def preview_del(id=None, page=None):
 # 预告列表
 @admin.route("/preview/list/<int:page>/", methods=["GET"])
 @admin_login_req
+@admin_auth
 def preview_list(page=None):
 	if page is None:
 		page = 1
@@ -370,6 +409,7 @@ def preview_list(page=None):
 # 会员查看
 @admin.route("/user/view/<int:id>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def user_view(id):
 	user = User.query.get_or_404(id)
 	return render_template("admin/user_view.html", user=user)
@@ -377,6 +417,7 @@ def user_view(id):
 # 会员删除
 @admin.route("/user/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def user_del(id=None, page=None):
 	user = User.query.filter_by(id=id).first_or_404()
 	db.session.delete(user)
@@ -391,6 +432,7 @@ def user_del(id=None, page=None):
 # 会员列表
 @admin.route("/user/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def user_list(page=None):
 	if page is None:
 		page = 1
@@ -402,6 +444,7 @@ def user_list(page=None):
 # 评论删除
 @admin.route("/comment/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def comment_del(id=None, page=None):
 	comment = Comment.query.filter_by(id=id).first_or_404()
 	db.session.delete(comment)
@@ -416,6 +459,7 @@ def comment_del(id=None, page=None):
 # 评论列表
 @admin.route("/comment/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def comment_list(page=None):
 	if page is None:
 		page = 1
@@ -434,6 +478,7 @@ def comment_list(page=None):
 # 电影收藏删除
 @admin.route("/moviecol/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def moviecol_del(id=None, page=None):
 	moviecol = Moviecol.query.filter_by(id=id).first_or_404()
 	db.session.delete(moviecol)
@@ -448,6 +493,7 @@ def moviecol_del(id=None, page=None):
 # 电影收藏列表
 @admin.route("/moviecol/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def moviecol_list(page=None):
 	if page is None:
 		page = 1
@@ -467,6 +513,7 @@ def moviecol_list(page=None):
 # 操作日志列表
 @admin.route("/oplog/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def oplog_list(page=None):
 	if page is None:
 		page = 1
@@ -483,6 +530,7 @@ def oplog_list(page=None):
 # 管理员登录日志列表
 @admin.route("/adminloginlog/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def adminloginlog_list(page=None):
 	if page is None:
 		page = 1
@@ -498,6 +546,7 @@ def adminloginlog_list(page=None):
 # 用户登录日志列表
 @admin.route("/userloginlog/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def userloginlog_list(page=None):
 	if page is None:
 		page = 1
@@ -513,6 +562,7 @@ def userloginlog_list(page=None):
 # 角色添加
 @admin.route("/role/add/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def role_add():
 	form = RoleForm()
 	data = form.data
@@ -530,6 +580,7 @@ def role_add():
 # 角色删除
 @admin.route("/role/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def role_del(id=None, page=None):
 	role = Role.query.filter_by(id=id).first_or_404()
 	db.session.delete(role)
@@ -544,6 +595,7 @@ def role_del(id=None, page=None):
 # 角色编辑
 @admin.route("/role/edit/<int:id>/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def role_edit(id=None):
 	form = RoleForm()
 	role = Role.query.get_or_404(id)
@@ -568,6 +620,7 @@ def role_edit(id=None):
 # 角色列表
 @admin.route("/role/list/<int:page>/", methods=['GET'])
 @admin_login_req
+@admin_auth
 def role_list(page=None):
 	if page is None:
 		page = 1
@@ -579,6 +632,7 @@ def role_list(page=None):
 # 权限添加
 @admin.route("/auth/add/", methods=['GET', 'POST'])
 @admin_login_req
+# @admin_auth
 def auth_add():
 	form = AuthForm()
 	if form.validate_on_submit():
@@ -595,6 +649,7 @@ def auth_add():
 # 权限编辑
 @admin.route('/auth/edit/<int:id>/', methods=['GET', 'POST'])
 @admin_login_req
+# @admin_auth
 def auth_edit(id):
 	form = AuthForm()
 	auth = Auth.query.get_or_404(id)
@@ -616,6 +671,7 @@ def auth_edit(id):
 # 权限删除
 @admin.route("/auth/del/<int:id>/<int:page>/", methods=['GET'])
 @admin_login_req
+# @admin_auth
 def auth_del(id=None, page=None):
 	auth = Auth.query.get_or_404(id)
 	db.session.delete(auth)
@@ -630,6 +686,7 @@ def auth_del(id=None, page=None):
 # 权限列表
 @admin.route("/auth/list/<int:page>/",methods=["GET"])
 @admin_login_req
+# @admin_auth
 def auth_list(page=None):
 	if page is None:
 		page = 1
@@ -639,13 +696,40 @@ def auth_list(page=None):
 	return render_template("admin/auth_list.html", page_data=page_data)
 
 # 管理员添加
-@admin.route("/admin/add/")
+@admin.route("/admin/add/", methods=['GET', 'POST'])
 @admin_login_req
+@admin_auth
 def admin_add():
-	return render_template("admin/admin_add.html")
+	form = AdminForm()
+	if form.validate_on_submit():
+		data = form.data
+		admin_count = Admin.query.filter_by(name=data['name']).count()
+		if admin_count == 1:
+			flash("名称已经存在", 'err')
+			return redirect(url_for('admin.admin_add'))
+		admin = Admin(
+			name = data['name'],
+			pwd = generate_password_hash(data['pwd']),
+			role_id = data['role_id'],
+			is_super = 1
+		)
+		db.session.add(admin)
+		db.session.commit()
+		flash("添加管理员成功", 'ok')
+	return render_template("admin/admin_add.html", form=form)
 
 # 管理员列表
-@admin.route("/admin/list/")
+@admin.route("/admin/list/<int:page>/", methods=['GET'])
 @admin_login_req
-def admin_list():
-	return render_template("admin/admin_list.html")
+@admin_auth
+def admin_list(page=None):
+	if page is None:
+		page=1
+	page_data = Admin.query.join(
+			Role
+		).filter(
+			Role.id == Admin.role_id
+		).order_by(
+		Admin.addtime.desc()
+	).paginate(page=page, per_page=5) # 一页显示5条
+	return render_template("admin/admin_list.html", page_data=page_data)
