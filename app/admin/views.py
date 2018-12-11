@@ -79,7 +79,7 @@ def login():
 		# 调用在models中定义的check_pwd方法查询密码
 		if not admin.check_pwd(data["pwd"]):
 			flash("密码错误!", 'err')
-			return redirect(url_for("admin.login"))
+			return render_template("admin/login.html",form=form)
 		# 将账户账号存入session
 		session["admin"] = data["account"]
 		session["admin_id"] = admin.id
