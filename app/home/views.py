@@ -3,7 +3,7 @@ from . import home
 import os
 import datetime
 from flask import render_template, redirect, url_for, flash, session, request
-from app.home.forms import RegisterForm, LoginForm, UserdetailForm
+from app.home.forms import RegisterForm, LoginForm, UserdetailForm, PwdForm
 from app.models import User, Userlog
 from app import db, app
 from werkzeug.utils import secure_filename
@@ -118,17 +118,35 @@ def user():
 @home.route("/pwd/", methods=['GET', 'POST'])
 @admin_login_req
 def pwd():
-	return render_template("/home/pwd.html")
+	form = PwdForm()
+	if form.validate_on_submit():
+		data = form.data
+		user = User.query.filter_by(name=session['user']).first()
+		if not user.check_pwd(data['old_pwd']):
+			flash('旧密码错误', 'err')
+			return redirect(url_for('home.pwd'))
+		user.pwd = generate_password_hash(data['new_pwd'])
+		db.session.add(user)
+		db.session.commit()
+		flash("修改密码成功, 请重新登录", "ok")
+		return redirect(url_for('home.logout'))
+	return render_template("/home/pwd.html", form=form)
 
 @home.route("/comments/")
 @admin_login_req
 def comments():
 	return render_template("/home/comments.html")
 
-@home.route("/loginlog/")
+# 会员登录日志
+@home.route("/loginlog/<int:page>/", methods=['GET'])
 @admin_login_req
-def loginlog():
-	return render_template("/home/loginlog.html")
+def loginlog(page=None):
+	page_data = Userlog.query.filter_by(
+		user_id = int(session['user_id'])
+	).order_by(
+		Userlog.addtime.desc()
+	).paginate(page=page, per_page=1)
+	return render_template("/home/loginlog.html", page_data=page_data)
 
 @home.route("/moviecol/")
 @admin_login_req
