@@ -47,10 +47,8 @@ def admin_auth(f):
 		auth_list = Auth.query.all()
 		# 通过所支持的权限得到对应所支持的url
 		urls = [ auth.url for auth_id in auths for auth in auth_list if auth_id == auth.id ]
-		print('urls:',urls)
 		# 当前访问的页面url
 		rule = request.url_rule
-		print('rule:',rule)
 		if str(rule) not in urls:
 			abort(404)
 		return f(*args, **kwargs)
@@ -217,13 +215,13 @@ def movie_add():
 		data = form.data
 		file_url = secure_filename(form.url.data.filename)
 		file_logo = secure_filename(form.logo.data.filename)
-		if not os.path.exists(app.config['UP_DIR']):
-			os.makedirs(app.config['UP_DIR'])
-			os.chmod(app.config['UP_DIR'], 'rw')
+		if not os.path.exists(app.config['MO_DIR']):
+			os.makedirs(app.config['MO_DIR'])
+			os.chmod(app.config['MO_DIR'], 'rw')
 		url = change_filename(file_url)
 		logo = change_filename(file_logo)
-		form.url.data.save(app.config['UP_DIR'] + url)
-		form.logo.data.save(app.config['UP_DIR'] + logo)
+		form.url.data.save(app.config['MO_DIR'] + url)
+		form.logo.data.save(app.config['MO_DIR'] + logo)
 		movie = Movie(
 			title = data['title'],
 			url = url,
@@ -263,20 +261,20 @@ def movie_edit(id):
 			flash('片名已经存在', 'err')
 			return redirect(url_for('admin.movie_edit', id=id))
 
-		if not os.path.exists(app.config['UP_DIR']):
-			os.makedirs(app.config['UP_DIR'])
-			os.chmod(app.config['UP_DIR'], 'rw')
+		if not os.path.exists(app.config['MO_DIR']):
+			os.makedirs(app.config['MO_DIR'])
+			os.chmod(app.config['MO_DIR'], 'rw')
 		
 		# 将用户输入的电影文件下载到本地
 		if form.url.data.filename != "":
 			file_url = secure_filename(form.url.data.filename)
 			movie.url = change_filename(file_url)
-			form.url.data.save(app.config['UP_DIR'] + movie.url)
+			form.url.data.save(app.config['MO_DIR'] + movie.url)
 
 		if form.logo.data.filename != "":
 			file_logo = secure_filename(form.logo.data.filename)
 			movie.logo = change_filename(file_logo)
-			form.logo.data.save(app.config['UP_DIR'] + movie.logo)
+			form.logo.data.save(app.config['MO_DIR'] + movie.logo)
 
 		movie.star = data['star']
 		movie.tag_id = data['tag_id']
@@ -330,11 +328,11 @@ def preview_add():
 	if form.validate_on_submit():
 		data = form.data
 		file_logo = secure_filename(form.logo.data.filename)
-		if not os.path.exists(app.config["UP_DIR"]):
-			os.makedirs(app.config['UP_DIR'])
-			os.chmod(app.config['UP_DIR'], 'rw')
+		if not os.path.exists(app.config["PR_DIR"]):
+			os.makedirs(app.config['PR_DIR'])
+			os.chmod(app.config['PR_DIR'], 'rw')
 		logo = change_filename(file_logo)
-		form.logo.data.save(app.config["UP_DIR"] + logo)
+		form.logo.data.save(app.config["PR_DIR"] + logo)
 		preview = Preview(
 			title = data['title'],
 			logo = logo
@@ -361,14 +359,14 @@ def preview_edit(id=None):
 		if preview_count == 1 and data['title'] != preview.title:
 			flash('预告名已经存在', 'err')
 
-		if not os.path.exists(app.config['UP_DIR']):
-			os.makedirs(app.config['UP_DIR'])
-			os.chmod(app.config['UP_DIR'], 'rw')
+		if not os.path.exists(app.config['PR_DIR']):
+			os.makedirs(app.config['PR_DIR'])
+			os.chmod(app.config['PR_DIR'], 'rw')
 		
 		if form.logo.data.filename != "":
 			file_logo = secure_filename(form.logo.data.filename)
 			preview.logo = change_filename(file_logo)
-			form.logo.data.save(app.config['UP_DIR'] + preview.logo)
+			form.logo.data.save(app.config['PR_DIR'] + preview.logo)
 
 		preview.title = data['title']
 		# preview.logo = logo
