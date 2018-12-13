@@ -1,4 +1,5 @@
 {% extends "home/home.html" %}
+{% import 'ui/comment_page.html' as pg %}
 
 {% block css %}
 <!--播放页面-->
@@ -107,62 +108,78 @@
                 <h3 class="panel-title"><span class="glyphicon glyphicon-comment"></span>&nbsp;电影评论</h3>
             </div>
             <div class="panel-body">
-                <!-- <div class="alert alert-danger alert-dismissible" role="alert">
+                {% if 'user' not in session %}
+                <div class="alert alert-danger alert-dismissible" role="alert">
                     <button type="button" class="close" data-dismiss="alert">
                         <span aria-hidden="true">×</span>
                         <span class="sr-only">Close</span>
                     </button>
                     <strong>请先<a href="{{ url_for('home.login') }}" target="_blank"
                                  class="text-info">登录</a>，才可参与评论！</strong>
-                </div> -->
+                </div>
+                {% endif %}
                 <ol class="breadcrumb" style="margin-top:6px;">
-                    <li>全部评论{{ movie.commentnum }}</li>
+                    <li>全部评论({{ movie.commentnum }})</li>
                 </ol>
-                <p style="color:red;">  msg  </p>
-                <p style="color:green;"> msg </p>
+                {% for msg in get_flashed_messages(category_filter=["ok"]) %}
+                    <p style="color: green">{{ msg }}</p>
+                {% endfor %}
+                {% for msg in get_flashed_messages(category_filter=["err"]) %}
+                    <p style="color: red">{{ msg }}</p>
+                {% endfor %}
+                {% if "user" in session %}
                 <form role="form" style="margin-bottom:6px;" method="post">
                     <div class="form-group">
                         <div>
-                            <label for="input_content"> form.content.label </label>
+                            <label for="input_content">{{ form.content.label }}</label>
+                            {{ form.content }}
                         </div>
+                        {% for err in form.content.errors %}
                         <div class="col-md-12">
-                            <font style="color:red">  err  </font>
+                            <font style="color:red">{{ err }}</font>
                         </div>
+                        {% endfor %}
                     </div>
-                    &nbsp;
+                    {{ form.csrf_token }}
+                    {{ form.submit }}
                     <a class="btn btn-danger" id="btn-col"><span class="glyphicon glyphicon-heart"></span>&nbsp;收藏电影</a>
                     &nbsp;
                     <a class="btn btn-primary" href=""><span class="glyphicon glyphicon-star"></span>&nbsp;查看弹幕版本</a>
                 </form>
+                {% endif %}
                 <div class="col-md-12">
                     <font style="color:green" id="show_col_msg"></font>
                 </div>
                 <div class="clearfix"></div>
                 <ul class="commentList">
+                    <!-- 遍历所有评论 -->
+                    {% for v in page_data.items %}
                     <li class="item cl">
                         <a>
                             <i class="avatar size-L radius">
-                                <img alt="not found" src="" class="img-circle"
+                                <img alt="not found" src="{{ url_for('static', filename='uploads/users/'+v.user.face) }}" class="img-circle"
                                      style="border:1px solid #abcdef;width:50px;">
                             </i>
                         </a>
                         <div class="comment-main">
                             <header class="comment-header">
                                 <div class="comment-meta">
-                                    <a class="comment-author" href="user.html">某某某</a>
+                                    <a class="comment-author" href="user.html">{{ v.user.name }}</a>
                                     评论于
-                                    <time title=" v.addtime " datetime=" v.addtime ">
-                                        时间
+                                    <time title="{{ v.addtime }}" datetime="{{ v.addtime }}">
+                                        {{ v.addtime }}
                                     </time>
                                 </div>
                             </header>
                             <div class="comment-body">
-                                <p> v.content | safe </p>
+                                <p>{{ v.content | safe }}</p>
                             </div>
                         </div>
                     </li>
+                    {% endfor %}
                 </ul>
                 <div class="col-md-12 text-center">
+                    {{ pg.page(page_data, 'home.play',movie.id) }}
                 </div>
             </div>
         </div>
