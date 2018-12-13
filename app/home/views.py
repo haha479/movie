@@ -4,16 +4,17 @@ import os
 import datetime
 from flask import render_template, redirect, url_for, flash, session, request
 from app.home.forms import RegisterForm, LoginForm, UserdetailForm, PwdForm, CommentForm
-from app.models import User, Userlog, Preview, Tag, Movie, Comment
+from app.models import User, Userlog, Preview, Tag, Movie, Comment, Moviecol
 from app import db, app
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 import uuid
+import json
 from functools import wraps
 
 
 # 用于检查用户是否登录的装饰器
-def admin_login_req(func):
+def user_login_req(func):
 	@wraps(func)
 	def decorated_function(*args, **kwargs):
 		if "user" not in session:
@@ -75,7 +76,7 @@ def logout():
 	return redirect(url_for("home.login"))
 
 @home.route("/user/", methods=['GET', 'POST'])
-@admin_login_req
+@user_login_req
 def user():
 	form = UserdetailForm()
 	user = User.query.get(int(session['user_id']))
@@ -116,7 +117,7 @@ def user():
 	return render_template("/home/user.html", form=form, user=user)
 
 @home.route("/pwd/", methods=['GET', 'POST'])
-@admin_login_req
+@user_login_req
 def pwd():
 	form = PwdForm()
 	if form.validate_on_submit():
@@ -133,7 +134,7 @@ def pwd():
 	return render_template("/home/pwd.html", form=form)
 
 @home.route("/comments/<int:page>/", methods=['GET'])
-@admin_login_req
+@user_login_req
 def comments(page=None):
 	if page == None:
 		page= 1
@@ -151,7 +152,7 @@ def comments(page=None):
 
 # 会员登录日志
 @home.route("/loginlog/<int:page>/", methods=['GET'])
-@admin_login_req
+@user_login_req
 def loginlog(page=None):
 	page_data = Userlog.query.filter_by(
 		user_id = int(session['user_id'])
@@ -160,10 +161,44 @@ def loginlog(page=None):
 	).paginate(page=page, per_page=1)
 	return render_template("/home/loginlog.html", page_data=page_data)
 
-@home.route("/moviecol/")
-@admin_login_req
-def moviecol():
-	return render_template("/home/moviecol.html")
+# 添加电影收藏
+@home.route("/moviecol/add/", methods=["GET"])
+@user_login_req
+def moviecol_add():
+	mid = request.args.get('mid', '')
+	uid = request.args.get('uid', '')
+	moviecol_count = Moviecol.query.filter_by(
+		user_id = int(uid),
+		movie_id = int(mid)
+	).count()
+	if moviecol_count == 1:
+		data = dict(ok=0)
+	if moviecol_count == 0:
+		movie_col = Moviecol(
+			user_id = int(uid),
+			movie_id = int(mid)
+		)
+		db.session.add(moviecol)
+		db.session.commit()
+		data = dict(ok=1)
+	return json.dumps(data)
+
+@home.route("/moviecol/<int:page>/")
+@user_login_req
+def moviecol(page=None):
+	if page is None:
+		page=1
+	page_data = Moviecol.query.join(
+		Movie
+	).join(
+		User
+	).filter(
+		Movie.id == Moviecol.movie_id,
+		User.id == session['user_id']
+	).order_by(
+		Moviecol.addtime.desc()
+	).paginate(page=page, per_page=10)
+	return render_template("/home/moviecol.html", page_data=page_data)
 
 # 首页
 @home.route("/<int:page>/", methods=['GET', 'POST'])

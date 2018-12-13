@@ -21,7 +21,7 @@
 				{% for v in data %}
 				<li id="imgCard{{ v.id-1 }}">
 					<a href=""><span style="opacity:0;"></span></a>
-					<img style="width: 600px" src="{{ url_for('static', filename='uploads/'+v.logo) }}" alt="None">
+					<img src="{{ url_for('static', filename='uploads/previews/'+v.logo) }}" alt="None">
 					<p style="bottom:0">{{ v.title }}</p>
 				</li>
 				{% endfor %}

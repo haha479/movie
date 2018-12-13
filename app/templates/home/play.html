@@ -231,7 +231,27 @@ var ue = UE.getEditor('input_content',{
 </script>
 <script>
     $(document).ready(function(){
-        
+        $("#btn-col").click(function){
+            console.log('aaaaaaa')
+            var mid = {{ movie.id }}
+            var uid = {{ session['user_id'] }}
+            $.ajax({
+                url: "{{ url_for('home.moviecol_add') }}",
+                type: "GET",
+                data: "mid="+mid+"&uid="+uid,
+                dataType: "json",
+                success:function(res){
+                    if(res.ok == 1){
+                        $("#show_col_msg").empty()
+                        $("#show_col_msg").append('收藏电影成功')
+                    }
+                    else{
+                        $("#show_col_msg").empty()
+                        $.("#show_col_msg").append("该电影您已经收藏")
+                    }
+                }
+            })
+        };
     });
 </script>
 <!--播放页面-->
