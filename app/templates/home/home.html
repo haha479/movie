@@ -45,7 +45,7 @@
                 <div class="form-group input-group">
                     <input type="text" class="form-control" placeholder="请输入电影名！" id="key_movie">
                     <span class="input-group-btn">
-                        <a href="{{ url_for('home.search') }}" class="btn btn-default" id="do_search"><span class="glyphicon glyphicon-search"></span>&nbsp;搜索</a>
+                        <a class="btn btn-default" id="do_search"><span class="glyphicon glyphicon-search"></span>&nbsp;搜索</a>
                     </span>
                 </div>
             </form>
@@ -108,7 +108,7 @@
         });
         $("#do_search").click(function(){
             var key = $("#key_movie").val();
-            {#location.href = "{{ url_for('home.search',page=1) }}?key=" + key;#}
+            location.href = "{{ url_for('home.search',page=1) }}?key=" + key;
         });
     });
 </script>
